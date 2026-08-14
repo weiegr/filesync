@@ -2,7 +2,7 @@
 
 > 服务器中转暂存的文件互传工具：上传文件生成 **6 位邀请码**，凭码下载，**大文件分片上传 + 断点续传**，**自定义有效期**（1-168 小时），到期自动清理。
 >
-> 单二进制、纯 Go 无 CGO、Go embed 内嵌前端，跨平台编译。部署在 **https://filesync.uuuuuu.asia**。
+> 单二进制、纯 Go 无 CGO、Go embed 内嵌前端，跨平台编译。
 
 **开源协议：[MIT](./LICENSE)** ✅
 
@@ -33,8 +33,6 @@
 
 ### 安装
 
-> ⚠️ 二进制发布尚未上传到 GitHub Releases，以下命令**预留占位**，待发布后可用。
-
 本地直接运行：
 
 ```bash
@@ -43,11 +41,11 @@ go build -o bin/filesync ./cmd/server
 # 访问 http://localhost:8080
 ```
 
-一键部署到服务器（**待发布后可用**，需先把二进制发布到 GitHub Releases）：
+一键部署到服务器：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<你的用户名>/filesync/main/deploy/install.sh \
-  | FS_GITHUB_REPO=<你的用户名>/filesync bash
+curl -fsSL https://raw.githubusercontent.com/weiegr/filesync/main/deploy/install.sh \
+  | FS_GITHUB_REPO=weiegr/filesync bash
 ```
 
 或使用本地二进制部署：
@@ -228,11 +226,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o filesync-linu
 
 ## 前端资源
 
-前端已本地化图标字体（Phosphor），不依赖外部 CDN 即可显示；Inter 正文字体与 Tailwind 暂走 CDN（可选本地化，见 [TODO](./TODO.md)）。
-
-## TODO / 开发计划
-
-见 [`TODO.md`](./TODO.md)（内部开发用，含已知问题与优化项）。
+前端已本地化图标字体（Phosphor），不依赖外部 CDN 即可显示；Inter 正文字体与 Tailwind 暂走 CDN。
 
 ## License
 
