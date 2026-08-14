@@ -16,13 +16,13 @@ func SecurityHeaders() gin.HandlerFunc {
 		// 控制 Referrer 信息泄露
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		// 内容安全策略
-		// Phosphor 图标已本地化(/vendor)，仅 Google Fonts (Inter 正文) 仍走 CDN
+		// 前端资源已全部本地化 (/vendor: Tailwind/Inter 字体/背景图/Phosphor 图标)，不再依赖任何外部 CDN
 		c.Header("Content-Security-Policy",
 			"default-src 'self'; "+
-				"script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "+
-				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "+
-				"font-src 'self' https://fonts.gstatic.com data:; "+
-				"img-src 'self' data: https://images.unsplash.com; "+
+				"script-src 'self' 'unsafe-inline'; "+
+				"style-src 'self' 'unsafe-inline'; "+
+				"font-src 'self' data:; "+
+				"img-src 'self' data:; "+
 				"connect-src 'self'; "+
 				"frame-ancestors 'none'; "+
 				"base-uri 'self'; "+
