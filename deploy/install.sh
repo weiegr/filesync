@@ -37,7 +37,7 @@ EXPIRE_HOURS=10
 ADMIN_EMAIL=""
 MEMORY_MAX="1G"
 NGINX_MAX_BODY="500m"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 # 二进制来源（本地上传路径 或 URL）
 BINARY_SRC=""
 
@@ -109,7 +109,10 @@ uninstall() {
     rm -f "$BIN_DIR/filesync"
     rm -f "$INSTALL_MARK"
 
-    read -r -p "是否删除所有数据目录 $DATA_DIR 和配置 $CONF_DIR? [y/N]: " ans
+    local ans=n
+    if [ -z "${FS_NONINTERACTIVE:-}" ]; then
+        read -r -p "是否删除所有数据目录 $DATA_DIR 和配置 $CONF_DIR? [y/N]: " ans
+    fi
     if [[ "${ans,,}" == "y" ]]; then
         userdel -r "$APP_USER" 2>/dev/null || true
         rm -rf "$DATA_DIR" "$CONF_DIR"
@@ -393,8 +396,12 @@ verify() {
 main() {
     if [ -f "$INSTALL_MARK" ]; then
         warn "检测到已安装记录"
-        read -r -p "已安装过，是否重新部署(会覆盖配置并重启，数据保留)? [y/N]: " ans
-        [[ "${ans,,}" == "y" ]] || exit 0
+        if [ -n "${FS_NONINTERACTIVE:-}" ]; then
+            info "非交互模式，自动重新部署（覆盖配置并重启，数据保留）"
+        else
+            read -r -p "已安装过，是否重新部署(会覆盖配置并重启，数据保留)? [y/N]: " ans
+            [[ "${ans,,}" == "y" ]] || exit 0
+        fi
     fi
 
     precheck
