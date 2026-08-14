@@ -1,0 +1,23 @@
+# 文件互传应用配置模板（install.sh 渲染生成）
+server:
+  port: {{PORT}}
+  trustProxy: true
+
+storage:
+  dir: {{DATA_DIR}}/files
+  maxTotalSize: {{MAX_TOTAL}}
+
+limits:
+  maxFileSize: {{MAX_FILE}}
+  maxFilesPerShare: {{MAX_FILES}}
+  expireHours: {{EXPIRE_HOURS}}
+  chunkSize: 8MB
+  uploadTTLHours: 24
+
+security:
+  rateLimitPerMin: 120
+  shareCodeMaxAttempts: 5
+  shareCodeLockMinutes: 10
+
+log:
+  dir: {{DATA_DIR}}/logs

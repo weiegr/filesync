@@ -1,0 +1,25 @@
+[Unit]
+Description=Filesync - Server-mediated file transfer
+After=network.target
+
+[Service]
+Type=simple
+User=filesync
+Group=filesync
+WorkingDirectory=/var/lib/filesync
+ExecStart=/usr/local/bin/filesync -config /etc/filesync/config.yaml
+Restart=always
+RestartSec=3
+
+# 资源限制
+LimitNOFILE=65535
+MemoryMax=1G
+# 防 fork 逃逸；数据目录需可写
+ProtectSystem=full
+ReadWritePaths=/var/lib/filesync
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

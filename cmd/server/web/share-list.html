@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="background-color: #c8cfc9;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
+    <title>分享文件列表</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/vendor/phosphor/style.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        morandi: {
+                            text: '#5B5F5D',
+                            subtext: '#8A8F8D',
+                            userBg: 'rgba(164, 180, 169, 0.75)',
+                            aiBg: 'rgba(255, 255, 255, 0.55)',
+                            accent: '#A4B4A9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            height: 100vh; height: 100dvh;
+            font-family: 'Inter', sans-serif;
+            color: #5B5F5D;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0; padding: 0;
+            background-color: #c8cfc9;
+            overflow: hidden;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+        }
+        .spring-btn {
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            will-change: transform;
+        }
+        .spring-btn:active { transform: scale(0.92); }
+        .safe-pt { padding-top: max(8px, env(safe-area-inset-top)); }
+        .safe-pb { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+        .safe-px { padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+
+        .file-item {
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            min-height: 52px;
+        }
+        .file-item:hover { background: rgba(255, 255, 255, 0.4); }
+
+        .file-name-scroll {
+            overflow-x: auto; overflow-y: hidden;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            flex: 1; min-width: 0;
+            padding: 4px 0;
+            mask-image: linear-gradient(to right, transparent 0%, black 12px, black 88%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12px, black 88%, transparent 100%);
+        }
+        .file-name-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .file-name-scroll:active { cursor: grabbing; }
+        .file-name-text {
+            display: inline-block;
+            font-size: 14px; font-weight: 500;
+            color: #5B5F5D;
+            letter-spacing: 0.02em;
+            padding: 0 4px;
+            pointer-events: none;
+        }
+        .download-btn {
+            flex-shrink: 0;
+            width: 60px; height: 34px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 500;
+            color: #5B5F5D;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .download-btn:hover { background: rgba(255,255,255,0.65); border-color: rgba(164,180,169,0.5); }
+        .download-btn:active { transform: scale(0.92); }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-item { opacity: 0; animation: slideUpFade 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body class="w-full overflow-hidden flex flex-col relative bg-cover bg-center selection:bg-[#A4B4A9]/30" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop');">
+
+    <div class="fixed inset-0 bg-[#e2e5e1]/65 backdrop-blur-[3px] z-0 pointer-events-none"></div>
+
+    <header class="w-full glass-panel z-20 flex flex-col shrink-0 relative border-b border-white/30">
+        <div class="w-full h-[env(safe-area-inset-top)] min-h-[8px]"></div>
+        <div class="w-full h-[52px] flex items-center safe-px relative">
+            <button id="btn-back" class="w-8 h-8 rounded-full glass-panel flex items-center justify-center border border-white/60 shadow-sm spring-btn text-morandi-text cursor-pointer relative z-10 hover:bg-white/50 transition-colors">
+                <i class="ph ph-caret-left text-[20px] leading-none pr-0.5"></i>
+            </button>
+            <span class="ml-2 font-medium text-[15px] tracking-wider text-morandi-text truncate" id="page-title">
+                加载中...
+            </span>
+            <div class="flex-1"></div>
+        </div>
+    </header>
+
+    <main class="relative z-10 w-full flex-1 overflow-y-auto no-scrollbar flex flex-col safe-px safe-pb">
+        <div class="w-full max-w-sm mx-auto flex-1 flex flex-col gap-1 py-4">
+
+            <!-- 加载 / 错误状态 -->
+            <div id="state-area" class="flex flex-col items-center justify-center py-16 gap-3 text-morandi-subtext">
+                <i id="state-icon" class="ph ph-circle-notch spin text-[40px] text-[#A4B4A9]"></i>
+                <p id="state-text" class="text-[14px]">正在获取分享文件...</p>
+            </div>
+
+            <!-- 文件列表 -->
+            <div id="list-area" style="display:none;">
+                <div class="flex items-center justify-between px-2 pb-2 animate-item animate-delay-1">
+                    <span id="file-count" class="text-[12px] font-medium text-morandi-subtext">共 0 个文件</span>
+                    <span class="text-[11px] text-morandi-subtext/60 flex items-center gap-1">
+                        <i class="ph ph-clock text-[12px]"></i>
+                        <span id="expire-text">10小时内有效</span>
+                    </span>
+                </div>
+
+                <div id="file-container" class="w-full glass-panel rounded-[20px] p-2 border border-white/60 shadow-sm flex flex-col divide-y divide-white/20"></div>
+
+                <div class="flex items-center justify-center gap-2 mt-4 text-morandi-subtext/50 text-[11px] animate-item">
+                    <i class="ph ph-shield-check text-[13px]"></i>
+                    <span id="footer-text">端到端加密 · 匿名分享</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 glass-panel border-white/80 px-5 py-2.5 rounded-full shadow-lg text-[13px] font-medium text-morandi-text pointer-events-none transition-all duration-300 opacity-0 -translate-y-4"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnBack = document.getElementById('btn-back');
+            const toastEl = document.getElementById('toast');
+            const stateArea = document.getElementById('state-area');
+            const stateIcon = document.getElementById('state-icon');
+            const stateText = document.getElementById('state-text');
+            const listArea = document.getElementById('list-area');
+            const fileContainer = document.getElementById('file-container');
+            const fileCount = document.getElementById('file-count');
+            const expireText = document.getElementById('expire-text');
+            const pageTitle = document.getElementById('page-title');
+            const footerText = document.getElementById('footer-text');
+
+            // 从 URL path 读取邀请码：/s/<code>
+            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            const code = pathParts[1] || '';
+
+            function showToast(msg) {
+                toastEl.innerText = msg;
+                toastEl.style.opacity = '1';
+                toastEl.style.transform = 'translate(-50%, 0)';
+                clearTimeout(toastEl._timer);
+                toastEl._timer = setTimeout(() => {
+                    toastEl.style.opacity = '0';
+                    toastEl.style.transform = 'translate(-50%, -16px)';
+                }, 2200);
+            }
+
+            function formatSize(bytes) {
+                if (!bytes) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+            }
+
+            function setState(loading, iconClass, text) {
+                stateArea.style.display = 'flex';
+                listArea.style.display = 'none';
+                stateIcon.className = iconClass;
+                stateText.textContent = text;
+                if (loading) {
+                    stateIcon.classList.add('spin');
+                } else {
+                    stateIcon.classList.remove('spin');
+                }
+            }
+
+            function formatExpiry(iso) {
+                try {
+                    const ms = new Date(iso).getTime() - Date.now();
+                    if (ms <= 0) return '已过期';
+                    const hours = Math.floor(ms / 3600000);
+                    const mins = Math.floor((ms % 3600000) / 60000);
+                    if (hours > 0) return hours + '小时' + (mins > 0 ? mins + '分' : '') + '内有效';
+                    return mins + '分钟后失效';
+                } catch (e) { return '10小时内有效'; }
+            }
+
+            function formatCode(code) {
+                if (!code) return '';
+                return code.slice(0, 3) + ' ' + code.slice(3);
+            }
+
+            function loadShare() {
+                if (!code || !/^\d{6}$/.test(code)) {
+                    setState(false, 'ph ph-warning text-[40px] text-[#8A8F8D]', '无效的分享码');
+                    return;
+                }
+                setState(true, 'ph ph-circle-notch spin text-[40px] text-[#A4B4A9]', '正在获取分享文件...');
+
+                fetch('/api/share/' + code)
+                    .then(r => {
+                        if (!r.ok) {
+                            return r.json().catch(() => ({})).then(d => {
+                                throw new Error(d.error || ('HTTP ' + r.status));
+                            });
+                        }
+                        return r.json();
+                    })
+                    .then(data => {
+                        render(data);
+                    })
+                    .catch(err => {
+                        setState(false, 'ph ph-warning text-[40px] text-[#8A8F8D]', err.message || '获取失败');
+                    });
+            }
+
+            function render(data) {
+                stateArea.style.display = 'none';
+                listArea.style.display = 'block';
+
+                const codeStr = formatCode(data.code);
+                pageTitle.innerHTML = '来自 <span class="text-[#A4B4A9] font-semibold">' + codeStr + '</span> 分享的文件';
+                footerText.textContent = '端到端加密 · 来自 ' + codeStr + ' 的分享';
+                expireText.textContent = formatExpiry(data.expiresAt);
+                fileCount.textContent = '共 ' + data.files.length + ' 个文件';
+
+                fileContainer.innerHTML = '';
+                data.files.forEach((f, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item flex items-center gap-1 py-2.5 px-2 rounded-[14px] animate-item';
+                    div.style.animationDelay = (0.05 + idx * 0.05) + 's';
+                    div.innerHTML = `
+                        <div class="file-name-scroll" data-drag="true">
+                            <span class="file-name-text">${escapeHtml(f.name)}</span>
+                        </div>
+                        <button class="download-btn spring-btn" data-fid="${f.id}">
+                            下载
+                        </button>
+                    `;
+                    fileContainer.appendChild(div);
+                });
+
+                // 下载
+                fileContainer.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const fid = this.dataset.fid;
+                        const fname = this.closest('.file-item').querySelector('.file-name-text').textContent;
+                        showToast('📥 正在下载: ' + fname);
+                        // 触发浏览器下载
+                        window.location.href = '/api/share/' + code + '/files/' + fid;
+                    });
+                });
+
+                // 长文件名拖拽滚动
+                initScrollContainers(fileContainer.querySelectorAll('.file-name-scroll'));
+            }
+
+            function escapeHtml(s) {
+                const d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            }
+
+            function initScrollContainers(containers) {
+                containers.forEach(container => {
+                    let isDown = false, startX = 0, scrollLeft = 0;
+
+                    function beginDrag(clientX) {
+                        if (isDown) return;
+                        isDown = true;
+                        startX = clientX - container.getBoundingClientRect().left;
+                        scrollLeft = container.scrollLeft;
+                        container.style.cursor = 'grabbing';
+                        container.style.scrollBehavior = 'auto';
+                    }
+                    function moveDrag(clientX) {
+                        if (!isDown) return;
+                        const x = clientX - container.getBoundingClientRect().left;
+                        const walk = (x - startX) * 1.2;
+                        container.scrollLeft = scrollLeft - walk;
+                    }
+                    function endDrag() {
+                        if (isDown) { isDown = false; container.style.cursor = 'grab'; }
+                    }
+
+                    // Pointer 事件（鼠标+触屏统一）
+                    container.addEventListener('pointerdown', (e) => {
+                        if (e.target.closest('.download-btn')) return;
+                        beginDrag(e.clientX);
+                        e.preventDefault();
+                    });
+                    container.addEventListener('pointermove', (e) => {
+                        moveDrag(e.clientX);
+                    });
+                    container.addEventListener('pointerup', endDrag);
+                    container.addEventListener('pointercancel', endDrag);
+
+                    // Mouse 事件兜底（部分合成环境只派发 mouse）
+                    container.addEventListener('mousedown', (e) => {
+                        if (e.target.closest('.download-btn')) return;
+                        beginDrag(e.clientX);
+                        e.preventDefault();
+                    });
+                    container.addEventListener('mousemove', (e) => { moveDrag(e.clientX); });
+                    container.addEventListener('mouseup', endDrag);
+                    container.addEventListener('mouseleave', endDrag);
+
+                    // 阻止原生拖拽/选中
+                    container.addEventListener('dragstart', (e) => e.preventDefault());
+                    container.addEventListener('selectstart', (e) => e.preventDefault());
+                    // 触屏: 阻止纵向滚动冒泡，保留横向拖动
+                    container.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+                    // 有溢出内容才显示抓手光标
+                    container.style.cursor = (container.scrollWidth - container.clientWidth > 4) ? 'grab' : 'default';
+                });
+            }
+
+            btnBack.addEventListener('click', function() {
+                window.location.href = '/';
+            });
+
+            loadShare();
+        });
+    </script>
+</body>
+</html>

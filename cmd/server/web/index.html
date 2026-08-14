@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="background-color: #c8cfc9;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
+    <title>快速互传文件</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/vendor/phosphor/style.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        morandi: {
+                            text: '#5B5F5D',
+                            subtext: '#8A8F8D',
+                            userBg: 'rgba(164, 180, 169, 0.75)',
+                            aiBg: 'rgba(255, 255, 255, 0.55)',
+                            accent: '#A4B4A9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            height: 100vh;
+            height: 100dvh;
+            font-family: 'Inter', sans-serif;
+            color: #5B5F5D;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            background-color: #c8cfc9;
+            overflow: hidden;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.65);
+            border-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            outline: none;
+        }
+
+        .spring-btn {
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            will-change: transform;
+        }
+        .spring-btn:active {
+            transform: scale(0.92);
+        }
+
+        .safe-pt {
+            padding-top: max(8px, env(safe-area-inset-top));
+        }
+        .safe-pb {
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
+        }
+        .safe-px {
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+        }
+
+        /* 弹窗动画 */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s ease;
+        }
+
+        /* 按钮组入场动画 */
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-slide-up {
+            animation: fadeSlideUp 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+        }
+        .fade-slide-up-delay-1 {
+            animation-delay: 0.08s;
+            opacity: 0;
+        }
+        .fade-slide-up-delay-2 {
+            animation-delay: 0.16s;
+            opacity: 0;
+        }
+        .fade-slide-up-delay-3 {
+            animation-delay: 0.24s;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body class="w-full overflow-hidden flex flex-col relative bg-cover bg-center selection:bg-[#A4B4A9]/30" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop');">
+
+    <!-- 背景毛玻璃遮罩 -->
+    <div class="fixed inset-0 bg-[#e2e5e1]/65 backdrop-blur-[3px] z-0 pointer-events-none"></div>
+
+    <!-- ========================================================== -->
+    <!-- 顶栏：无返回按钮，仅显示标题 -->
+    <!-- ========================================================== -->
+    <header class="w-full glass-panel z-20 flex flex-col shrink-0 relative border-b border-white/30">
+        <div class="w-full h-[env(safe-area-inset-top)] min-h-[8px]"></div>
+        <div class="w-full h-[52px] flex items-center justify-center safe-px relative">
+            <span class="font-medium text-[16px] tracking-widest text-morandi-text">快速互传文件</span>
+        </div>
+    </header>
+
+    <!-- ========================================================== -->
+    <!-- 主内容区 -->
+    <!-- ========================================================== -->
+    <main class="relative z-10 w-full flex-1 overflow-y-auto no-scrollbar flex items-center justify-center">
+        <div class="w-full max-w-sm mx-auto safe-px safe-pb flex flex-col items-center justify-center gap-6 py-8">
+
+            <!-- 大图标 -->
+            <div class="w-24 h-24 rounded-full glass-panel border-2 border-white/70 shadow-sm flex items-center justify-center bg-white/40 fade-slide-up" style="animation-delay: 0.05s;">
+                <i class="ph ph-share-network text-[44px] text-[#A4B4A9]"></i>
+            </div>
+
+            <!-- 主标题 -->
+            <h1 class="text-[28px] font-semibold text-morandi-text tracking-wide fade-slide-up fade-slide-up-delay-1">
+                快速互传文件
+            </h1>
+
+            <!-- 副标题 -->
+            <p class="text-[14px] text-morandi-subtext text-center -mt-2 fade-slide-up fade-slide-up-delay-1">
+                服务器中转暂存 · 邀请码分享
+            </p>
+
+            <!-- 两个大按钮 -->
+            <div class="w-full flex flex-col gap-3.5 mt-2 fade-slide-up fade-slide-up-delay-2">
+                <!-- 分享文件 -->
+                <button id="btn-share" class="w-full h-[56px] rounded-[20px] bg-white/40 backdrop-blur-md border border-white/60 shadow-sm flex items-center justify-center gap-3 spring-btn hover:bg-white/60 active:bg-white/70 text-morandi-text">
+                    <i class="ph ph-upload-simple text-[22px] text-[#A4B4A9]"></i>
+                    <span class="text-[16px] font-medium tracking-wide">分享文件</span>
+                </button>
+
+                <!-- 填入分享码 -->
+                <button id="btn-join" class="w-full h-[56px] rounded-[20px] bg-white/40 backdrop-blur-md border border-white/60 shadow-sm flex items-center justify-center gap-3 spring-btn hover:bg-white/60 active:bg-white/70 text-morandi-text">
+                    <i class="ph ph-key text-[22px] text-[#A4B4A9]"></i>
+                    <span class="text-[16px] font-medium tracking-wide">填入分享码</span>
+                </button>
+            </div>
+
+            <!-- 底部小提示（安全标识） -->
+            <div class="flex items-center gap-2 text-morandi-subtext/70 text-[12px] mt-4 fade-slide-up fade-slide-up-delay-3">
+                <i class="ph ph-shield-check text-[14px]"></i>
+                <span>端到端加密 · 匿名传输</span>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ========================================================== -->
+    <!-- 二级菜单弹窗：输入分享码 -->
+    <!-- ========================================================== -->
+    <div id="share-code-modal" class="fixed inset-0 z-[60] flex items-center justify-center modal-overlay opacity-0 pointer-events-none transition-opacity duration-300 bg-black/20 backdrop-blur-sm">
+        <div class="w-[88%] max-w-[340px] glass-panel rounded-[24px] p-6 flex flex-col modal-content opacity-0 scale-95 transition-all duration-300 border border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.12)] bg-white/60 backdrop-blur-2xl">
+
+            <!-- 标题 -->
+            <h3 class="text-[18px] font-semibold text-morandi-text text-center mb-5">输入分享码</h3>
+
+            <!-- 文本框 -->
+            <div class="w-full mb-5">
+                <input type="text" id="share-code-input" placeholder="请输入6位分享码" maxlength="6" class="w-full h-[48px] glass-input rounded-[16px] px-4 text-[14px] text-morandi-text placeholder-morandi-subtext/70 text-center tracking-[6px] font-mono focus:bg-white/70 transition-all">
+                <p class="text-[11px] text-morandi-subtext/60 mt-2 text-center">示例：123456</p>
+            </div>
+
+            <!-- 按钮组 -->
+            <div class="flex gap-3">
+                <button id="btn-modal-cancel" class="flex-1 h-[44px] rounded-[16px] bg-white/50 border border-white/60 text-morandi-text font-medium text-[14px] spring-btn hover:bg-white/70 transition-colors">
+                    取消
+                </button>
+                <button id="btn-modal-confirm" class="flex-1 h-[44px] rounded-[16px] bg-[#A4B4A9] text-white font-medium text-[14px] spring-btn shadow-[0_4px_12px_rgba(164,180,169,0.3)] border border-white/30 hover:bg-[#8F9F94] transition-colors">
+                    确认输入
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- Toast 轻提示 -->
+    <!-- ========================================================== -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[70] glass-panel border-white/80 px-5 py-2.5 rounded-full shadow-lg text-[13px] font-medium text-morandi-text pointer-events-none transition-all duration-300 opacity-0 -translate-y-4" style="background: rgba(255,255,255,0.9);"></div>
+
+    <!-- ========================================================== -->
+    <!-- JavaScript -->
+    <!-- ========================================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const modal = document.getElementById('share-code-modal');
+            const modalContent = modal.querySelector('.modal-content');
+            const btnJoin = document.getElementById('btn-join');
+            const btnShare = document.getElementById('btn-share');
+            const btnCancel = document.getElementById('btn-modal-cancel');
+            const btnConfirm = document.getElementById('btn-modal-confirm');
+            const codeInput = document.getElementById('share-code-input');
+            const toastEl = document.getElementById('toast');
+
+            let isModalOpen = false;
+
+            // --- Toast 提示 ---
+            function showToast(msg) {
+                toastEl.innerText = msg;
+                toastEl.style.opacity = '1';
+                toastEl.style.transform = 'translate(-50%, 0)';
+                clearTimeout(toastEl._timer);
+                toastEl._timer = setTimeout(() => {
+                    toastEl.style.opacity = '0';
+                    toastEl.style.transform = 'translate(-50%, -16px)';
+                }, 2200);
+            }
+
+            // --- 打开弹窗 ---
+            function openModal() {
+                if (isModalOpen) return;
+                isModalOpen = true;
+                modal.classList.remove('pointer-events-none', 'opacity-0');
+                modal.classList.add('pointer-events-auto', 'opacity-100');
+                // 触发回流后执行内容动画
+                void modal.offsetWidth;
+                modalContent.classList.remove('opacity-0', 'scale-95');
+                modalContent.classList.add('opacity-100', 'scale-100');
+                // 聚焦输入框
+                setTimeout(() => codeInput.focus(), 200);
+            }
+
+            // --- 关闭弹窗 ---
+            function closeModal() {
+                if (!isModalOpen) return;
+                isModalOpen = false;
+                modalContent.classList.remove('opacity-100', 'scale-100');
+                modalContent.classList.add('opacity-0', 'scale-95');
+                modal.classList.remove('pointer-events-auto', 'opacity-100');
+                modal.classList.add('pointer-events-none', 'opacity-0');
+                codeInput.value = '';
+            }
+
+            // --- 确认输入 ---
+            function confirmCode() {
+                const code = codeInput.value.trim();
+                if (!code) {
+                    showToast('请输入分享码');
+                    return;
+                }
+                if (!/^\d{6}$/.test(code)) {
+                    showToast('分享码必须为6位数字');
+                    return;
+                }
+                const formatted = code.slice(0, 3) + ' ' + code.slice(3);
+                showToast('📎 正在获取分享文件: ' + formatted);
+                closeModal();
+                // 跳转到下载页，code 放在 URL path
+                window.location.href = '/s/' + code;
+            }
+
+            // --- 事件绑定 ---
+
+            // 点击“填入分享码”打开弹窗
+            btnJoin.addEventListener('click', openModal);
+
+            // 点击“分享文件”跳转至上传页
+            btnShare.addEventListener('click', function() {
+                window.location.href = '/upload';
+            });
+
+            // 取消按钮
+            btnCancel.addEventListener('click', closeModal);
+
+            // 确认按钮
+            btnConfirm.addEventListener('click', confirmCode);
+
+            // 点击遮罩关闭弹窗
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModal();
+            });
+
+            // 回车键触发确认
+            codeInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmCode();
+                }
+            });
+
+            // 输入框自动限制为数字，且最多6位
+            codeInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '').slice(0, 6);
+            });
+
+            // 点击弹窗内容不冒泡到遮罩
+            modalContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // 暴露方法供调试使用
+            window._openModal = openModal;
+            window._closeModal = closeModal;
+
+            console.log('📦 快速互传文件 · 入口页面已加载');
+            console.log('💡 点击 "填入分享码" 打开弹窗');
+            console.log('💡 点击 "分享文件" 跳转上传页 (示意)');
+        });
+    </script>
+</body>
+</html>

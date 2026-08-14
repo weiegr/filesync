@@ -1,0 +1,20 @@
+# 数据与日志
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# 编译产物
+filesync
+filesync.exe
+*.exe
+/bin/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 临时
+*.tmp
+.DS_Store

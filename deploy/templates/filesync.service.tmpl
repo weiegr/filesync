@@ -1,0 +1,27 @@
+[Unit]
+Description=Filesync - Server-mediated file transfer
+After=network.target
+
+[Service]
+Type=simple
+# 专用用户，无 shell
+User=filesync
+Group=filesync
+WorkingDirectory={{DATA_DIR}}
+ExecStart={{BIN_DIR}}/filesync -config {{CONF_DIR}}/config.yaml
+Restart=always
+RestartSec=3
+
+# 资源限制
+LimitNOFILE=65535
+MemoryMax={{MEMORY_MAX}}
+# 数据目录需可写，故用 full 而非 strict
+ProtectSystem=full
+# 显式允许数据目录写入
+ReadWritePaths={{DATA_DIR}}
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
