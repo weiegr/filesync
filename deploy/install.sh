@@ -207,6 +207,9 @@ acquire_binary() {
     info "=== 获取二进制 ==="
     local dest="$BIN_DIR/filesync"
 
+    # 若目标已存在且服务正在运行，覆盖会报 Text file busy，先删除旧文件
+    rm -f "$dest"
+
     # 1. 用户指定本地二进制
     if [ -n "$BINARY_SRC" ] && [ -f "$BINARY_SRC" ]; then
         info "使用本地二进制: $BINARY_SRC"
