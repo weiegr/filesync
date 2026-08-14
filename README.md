@@ -88,10 +88,6 @@ systemctl status filesync        # 状态
 journalctl -u filesync -f        # 实时日志
 ```
 
-### 截图
-
-> 📸 界面截图占位，待补充（首页 / 上传页 / 分享列表页）。
-
 ---
 
 ## API

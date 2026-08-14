@@ -73,6 +73,14 @@ func (h *StaticHandler) serveFile(c *gin.Context, name string) {
 		ct = "font/ttf"
 	case strings.HasSuffix(name, ".svg"):
 		ct = "image/svg+xml"
+	case strings.HasSuffix(name, ".jpg"), strings.HasSuffix(name, ".jpeg"):
+		ct = "image/jpeg"
+	case strings.HasSuffix(name, ".png"):
+		ct = "image/png"
+	case strings.HasSuffix(name, ".webp"):
+		ct = "image/webp"
+	case strings.HasSuffix(name, ".gif"):
+		ct = "image/gif"
 	}
 	c.Data(http.StatusOK, ct, data)
 }
