@@ -50,9 +50,9 @@ fail() { echo -e "\033[1;31m[FAIL]\033[0m $*"; exit 1; }
 ask() {
     local prompt="$1" default="$2" var="$3" input
     if [ -n "$default" ]; then
-        read -r -p "$prompt (默认: $default): " input
+        read -r -p "$prompt (默认: $default): " input || input="$default"
     else
-        read -r -p "$prompt: " input
+        read -r -p "$prompt: " input || input=""
     fi
     eval "$var='${input:-$default}'"
 }
@@ -110,8 +110,8 @@ uninstall() {
     rm -f "$INSTALL_MARK"
 
     local ans=n
-    if [ -z "${FS_NONINTERACTIVE:-}" ]; then
-        read -r -p "是否删除所有数据目录 $DATA_DIR 和配置 $CONF_DIR? [y/N]: " ans
+    if [ -z "${FS_NONINTERACTIVE:-}" ] && [ -t 0 ]; then
+        read -r -p "是否删除所有数据目录 $DATA_DIR 和配置 $CONF_DIR? [y/N]: " ans || ans=n
     fi
     if [[ "${ans,,}" == "y" ]]; then
         userdel -r "$APP_USER" 2>/dev/null || true
@@ -167,7 +167,7 @@ prompt_config() {
     EXPIRE_HOURS="${FS_EXPIRE_HOURS:-$EXPIRE_HOURS}"
     ADMIN_EMAIL="${FS_ADMIN_EMAIL:-$ADMIN_EMAIL}"
 
-    if [ -n "${FS_NONINTERACTIVE:-}" ]; then
+    if [ -n "${FS_NONINTERACTIVE:-}" ] || [ ! -t 0 ]; then
         info "非交互模式，使用环境变量/默认配置"
         info "域名=$APP_DOMAIN 端口=$APP_PORT 总容量=$MAX_TOTAL 单文件=$MAX_FILE 文件数=$MAX_FILES 有效期=${EXPIRE_HOURS}h"
     else
@@ -399,7 +399,7 @@ verify() {
 main() {
     if [ -f "$INSTALL_MARK" ]; then
         warn "检测到已安装记录"
-        if [ -n "${FS_NONINTERACTIVE:-}" ]; then
+        if [ -n "${FS_NONINTERACTIVE:-}" ] || [ ! -t 0 ]; then
             info "非交互模式，自动重新部署（覆盖配置并重启，数据保留）"
         else
             read -r -p "已安装过，是否重新部署(会覆盖配置并重启，数据保留)? [y/N]: " ans
