@@ -167,7 +167,7 @@ prompt_config() {
     EXPIRE_HOURS="${FS_EXPIRE_HOURS:-$EXPIRE_HOURS}"
     ADMIN_EMAIL="${FS_ADMIN_EMAIL:-$ADMIN_EMAIL}"
 
-    if [ -n "$FS_NONINTERACTIVE" ]; then
+    if [ -n "${FS_NONINTERACTIVE:-}" ]; then
         info "非交互模式，使用环境变量/默认配置"
         info "域名=$APP_DOMAIN 端口=$APP_PORT 总容量=$MAX_TOTAL 单文件=$MAX_FILE 文件数=$MAX_FILES 有效期=${EXPIRE_HOURS}h"
     else
