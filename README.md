@@ -81,6 +81,15 @@ bash deploy/install.sh --logs       # 实时查看日志
 bash deploy/install.sh --uninstall  # 卸载
 ```
 
+安装完成后会生成全局管理命令 `filesync-ctl`，**任意目录**直接可用，无需进入仓库：
+
+```bash
+sudo filesync-ctl --status      # 状态
+sudo filesync-ctl --restart     # 重启
+sudo filesync-ctl --logs        # 日志
+sudo filesync-ctl --uninstall   # 卸载
+```
+
 等价命令（systemctl 直管）：
 
 ```bash
@@ -97,9 +106,11 @@ journalctl -u filesync -n 100    # 最近 100 条日志
 
 ### 卸载
 
-一键卸载（会停止服务、删除 systemd/nginx 配置、删除二进制；数据与配置默认保留）：
+一键卸载（会停止服务、删除 systemd/nginx 配置、删除二进制与 filesync-ctl；数据与配置默认保留）：
 
 ```bash
+sudo filesync-ctl --uninstall     # 任意目录直接卸
+# 或
 bash deploy/install.sh --uninstall
 ```
 

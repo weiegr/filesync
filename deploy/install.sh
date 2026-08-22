@@ -25,6 +25,7 @@ INSTALL_MARK="/etc/filesync/.installed"
 CONF_DIR="/etc/filesync"
 DATA_DIR="/var/lib/filesync"
 BIN_DIR="/usr/local/bin"
+CTL_CMD="$BIN_DIR/filesync-ctl"
 APP_USER="filesync"
 APP_SERVICE="filesync.service"
 NGINX_CONF="/etc/nginx/conf.d/filesync.conf"
@@ -107,6 +108,7 @@ uninstall() {
     fi
 
     rm -f "$BIN_DIR/filesync"
+    rm -f "$CTL_CMD"
     rm -f "$INSTALL_MARK"
 
     local ans=n
@@ -395,6 +397,16 @@ verify() {
     echo "==========================================="
 }
 
+# ---------- 安装管理命令副本 (filesync-ctl) ----------
+install_ctl() {
+    # 复制脚本到 /usr/local/bin/filesync-ctl，方便任意目录直接管理/卸载
+    if [ -f "$CTL_CMD" ] && [ "$(readlink -f "$CTL_CMD")" = "$(readlink -f "$0")" ]; then
+        return  # 本身就是 ctl 副本，无需复制
+    fi
+    cp "$0" "$CTL_CMD" && chmod 755 "$CTL_CMD"
+    log "管理命令已安装: $CTL_CMD (任意目录可用: sudo filesync-ctl --uninstall)"
+}
+
 # ---------- 主流程 ----------
 main() {
     if [ -f "$INSTALL_MARK" ]; then
@@ -415,6 +427,7 @@ main() {
     render_config
     setup_user
     start_service
+    install_ctl
     verify
 }
 
