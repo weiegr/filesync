@@ -81,11 +81,45 @@ bash deploy/install.sh --logs       # 实时查看日志
 bash deploy/install.sh --uninstall  # 卸载
 ```
 
-等价命令：
+等价命令（systemctl 直管）：
 
 ```bash
-systemctl status filesync        # 状态
+systemctl status filesync        # 查看状态 + 最近日志
+systemctl start filesync         # 启动
+systemctl stop filesync          # 停止
+systemctl restart filesync       # 重启
+systemctl enable filesync        # 设置开机自启
+systemctl disable filesync       # 取消开机自启
+systemctl is-active filesync     # 仅返回 active/inactive
 journalctl -u filesync -f        # 实时日志
+journalctl -u filesync -n 100    # 最近 100 条日志
+```
+
+### 卸载
+
+一键卸载（会停止服务、删除 systemd/nginx 配置、删除二进制；数据与配置默认保留）：
+
+```bash
+bash deploy/install.sh --uninstall
+```
+
+> 卸载脚本最后会询问是否删除数据目录 `/var/lib/filesync` 和配置目录 `/etc/filesync`，回答 `y` 才会清空数据。
+
+手动卸载（等价，适合不用脚本的情况）：
+
+```bash
+systemctl stop filesync
+systemctl disable filesync
+rm -f /etc/systemd/system/filesync.service
+systemctl daemon-reload
+rm -f /etc/nginx/conf.d/filesync.conf
+nginx -t && systemctl reload nginx   # 若有 nginx 配置
+rm -f /usr/local/bin/filesync
+rm -f /etc/filesync/.installed
+
+# 确认不再需要数据后（谨慎，不可恢复）：
+rm -rf /var/lib/filesync /etc/filesync
+userdel filesync 2>/dev/null || true
 ```
 
 ---
